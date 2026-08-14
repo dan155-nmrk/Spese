@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Spese Settimanali</title>
+<style>
+  :root{
+    --bg:#0e0c17; --card:#1a1728; --border:#2c2745;
+    --text:#eaeaf2; --muted:#8e8aa3;
+    --accent:#8b7cff; --accent2:#5ee6a8; --danger:#ff6b6b; --warn:#ffb454; --gold:#e6c85e;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    padding:16px 16px 40px; max-width:480px; margin:0 auto;
+  }
+  h1{font-size:19px; font-weight:700; margin:4px 0 16px; letter-spacing:-.01em;}
+  .card{
+    background:var(--card); border:1px solid var(--border);
+    border-radius:16px; padding:16px; margin-bottom:14px;
+  }
+  .card.glow{
+    border-color:var(--accent);
+    box-shadow:0 0 0 1px rgba(139,124,255,.25), 0 8px 24px -8px rgba(139,124,255,.35);
+  }
+  .row{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .label{color:var(--muted); font-size:13px;}
+  .value{font-size:16px; font-weight:700; letter-spacing:-.01em;}
+  .value.big{font-size:32px; font-weight:800; letter-spacing:-.02em;}
+  .value.pos{color:var(--accent2);}
+  .value.neg{color:var(--danger);}
+  .value.warn{color:var(--warn);}
+  .bar-bg{height:8px; background:#26223a; border-radius:5px; overflow:hidden; margin:10px 0 2px;}
+  .bar-fill{height:100%; background:var(--accent2); border-radius:5px; transition:width .3s ease;}
+  .bar-fill.warn{background:var(--warn);}
+  .bar-fill.over{background:var(--danger);}
+  .bar-fill.gold{background:var(--gold);}
+  select,input{
+    background:#131020; border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:9px 10px; font-size:14px; width:100%;
+  }
+  textarea{
+    background:#131020; border:1px solid var(--border); color:var(--text);
+    border-radius:8px; padding:9px 10px; font-size:13px; width:100%; resize:vertical; min-height:44px;
+    font-family:inherit;
+  }
+  .form-row{display:flex; gap:8px; margin-bottom:10px;}
+  .form-row input{flex:1;}
+  button{
+    background:var(--accent); color:#0e0c17; border:none; border-radius:8px;
+    padding:9px 14px; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap;
+  }
+  button.secondary{background:#26223a; color:var(--text);}
+  button.small{padding:6px 10px; font-size:12px;}
+  button.danger-outline{background:transparent; color:var(--danger); border:1px solid var(--danger); padding:4px 8px; font-size:12px;}
+  .section-title{font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; margin:2px 0 10px;}
+  .empty{color:var(--muted); font-size:13px; text-align:center; padding:10px 0;}
+  .muted-small{color:var(--muted); font-size:12px; margin-top:2px;}
+
+  .expense-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:6px 0; font-size:13.5px; border-bottom:1px dashed #2c2745;
+  }
+  .add-expense-row{display:flex; gap:8px; margin-top:10px;}
+  .add-expense-row input{flex:1;}
+  .add-expense-row button{padding:9px 16px;}
+
+  .link-btn{background:none; border:none; color:var(--accent); font-size:12px; font-weight:700; padding:2px 0; cursor:pointer;}
+
+  .streak-badge{display:flex; align-items:center; gap:10px;}
+  .streak-num{font-size:32px; font-weight:800;}
+  .streak-fire{font-size:26px; transition:opacity .3s;}
+
+  .chart-wrap{display:flex; align-items:flex-end; gap:6px; height:110px; padding-top:10px;}
+  .chart-col{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+  .chart-bar{width:100%; border-radius:4px 4px 0 0; background:var(--accent2); min-height:2px; transition:height .3s ease;}
+  .chart-bar.over{background:var(--danger);}
+  .chart-label{font-size:10px; color:var(--muted); margin-top:4px; text-align:center;}
+
+  .alloc-card{border-color:var(--gold); box-shadow:0 0 0 1px rgba(230,200,94,.2);}
+  .alloc-split{display:flex; gap:8px; margin:10px 0;}
+  .alloc-split-col{flex:1;}
+  .alloc-split-col label{font-size:11px; color:var(--muted); display:block; margin-bottom:4px;}
+
+  .week-hist-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0; border-bottom:1px solid var(--border); font-size:13px;
+  }
+  .week-hist-item:last-child{border-bottom:none;}
+  .edit-toggle{cursor:pointer;}
+
+  /* lista giorni espandibile (come app vacanza) */
+  .day-item{border-bottom:1px solid var(--border); font-size:13.5px;}
+  .day-item:last-child{border-bottom:none;}
+  .day-item.today-row{background:rgba(139,124,255,.08); border-radius:8px;}
+  .day-row{display:flex; justify-content:space-between; align-items:center; padding:10px 6px; cursor:pointer;}
+  .day-chevron{color:var(--muted); font-size:11px; width:16px; text-align:right;}
+  .day-date{color:var(--muted); width:80px; flex-shrink:0; font-size:13px;}
+  .day-total{flex:1; text-align:right; color:var(--text); font-weight:600;}
+  .day-expand{padding:0 6px 10px;}
+  .week-dots{display:flex; justify-content:space-between; margin:12px 0 4px;}
+  .week-dot-col{display:flex; flex-direction:column; align-items:center; gap:5px;}
+  .week-dot{
+    width:10px; height:10px; border-radius:50%; background:#2c2745; border:1px solid var(--border);
+    transition:background .2s;
+  }
+  .week-dot.past{background:var(--muted);}
+  .week-dot.today{background:var(--accent); box-shadow:0 0 0 3px rgba(139,124,255,.25); width:11px; height:11px;}
+  .week-dot-label{font-size:9.5px; color:var(--muted); text-transform:uppercase;}
+  .week-dot-label.today{color:var(--accent); font-weight:700;}
+
+  /* circular progress for goal */
+  .goal-top{display:flex; align-items:center; gap:16px; margin-bottom:6px;}
+  .ring-wrap{position:relative; width:76px; height:76px; flex-shrink:0;}
+  .ring-bg{width:76px; height:76px; border-radius:50%;}
+  .ring-center{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:15px; font-weight:800; color:var(--gold);
+  }
+  .ring-inner-hole{
+    position:absolute; top:8px; left:8px; width:60px; height:60px; border-radius:50%; background:var(--card);
+  }
+  .goal-emoji{font-size:22px; margin-right:6px;}
+  .goal-name-row{font-size:15px; font-weight:700;}
+
+  /* pop animation on new value */
+  @keyframes popScale{
+    0%{transform:scale(1);}
+    35%{transform:scale(1.12);}
+    100%{transform:scale(1);}
+  }
+  .pop{animation:popScale .3s ease;}
+
+  /* confetti */
+  .confetti-piece{
+    position:fixed; top:-10px; width:8px; height:14px; opacity:0.9; z-index:9999;
+    animation:confettiFall linear forwards; border-radius:2px;
+  }
+  @keyframes confettiFall{
+    to{ transform:translateY(110vh) rotate(540deg); opacity:0.3; }
+  }
+</style>
+</head>
+<body>
+
+<h1>💶 Spese Settimanali — Vizi</h1>
+<div id="loading" class="empty">Caricamento...</div>
+
+<div id="app" style="display:none;">
+
+  <!-- BUDGET SETTIMANALE -->
+  <div class="card">
+    <div class="row">
+      <span class="label">Budget settimanale (Lun–Dom)</span>
+      <span class="value" id="budgetDisplay">€70</span>
+    </div>
+    <div id="budgetEditRow" style="display:none; margin-top:8px;">
+      <div class="form-row">
+        <input type="number" id="budgetInput" placeholder="Nuovo importo settimanale">
+        <button onclick="saveBudget()">Salva</button>
+      </div>
+    </div>
+    <button class="link-btn" onclick="toggleBudgetEdit()" id="budgetEditLink">Cambia importo</button>
+  </div>
+
+  <!-- ALLOCAZIONI IN SOSPESO -->
+  <div id="allocContainer"></div>
+
+  <!-- SETTIMANA CORRENTE -->
+  <div class="card glow">
+    <div class="section-title" id="currentWeekLabel">Settimana corrente</div>
+    <div class="week-dots" id="weekDots"></div>
+    <div class="row">
+      <span class="label">Budget di questa settimana</span>
+      <span class="value" id="curBudget">€70</span>
+    </div>
+    <div class="row">
+      <span class="label">Speso</span>
+      <span class="value" id="curSpeso">€0</span>
+    </div>
+    <div class="bar-bg"><div class="bar-fill" id="curBar" style="width:0%"></div></div>
+    <div class="row" style="margin-top:10px;">
+      <span class="label">Margine attuale</span>
+      <span class="value big" id="curMargine">€70</span>
+    </div>
+
+    <div id="curDayList" style="margin-top:12px;"></div>
+
+    <div style="margin-top:12px;">
+      <label class="muted-small" style="display:block; margin-bottom:4px;">Nota della settimana</label>
+      <textarea id="curNote" placeholder="es. weekend compleanno, trasferta lavoro..." onchange="saveNote(this.value)"></textarea>
+    </div>
+  </div>
+
+  <!-- STREAK -->
+  <div class="card">
+    <div class="section-title">Streak</div>
+    <div class="streak-badge">
+      <span class="streak-fire" id="streakFire">🔥</span>
+      <span class="streak-num" id="streakNum">0</span>
+      <span class="label">settimane consecutive sotto budget</span>
+    </div>
+  </div>
+
+  <!-- OBIETTIVO RISPARMIO -->
+  <div class="card">
+    <div class="row">
+      <span class="section-title" style="margin:0;">Obiettivo di risparmio</span>
+      <button class="link-btn" onclick="toggleGoalEdit()">Modifica</button>
+    </div>
+    <div id="goalEditRow" style="display:none; margin-bottom:10px;">
+      <div class="form-row">
+        <input type="text" id="goalEmojiInput" placeholder="🎯" maxlength="4" style="flex:0 0 60px; text-align:center; font-size:18px;">
+        <input type="text" id="goalNameInput" placeholder="Nome obiettivo (es. Bici nuova)">
+      </div>
+      <div class="form-row">
+        <input type="number" id="goalTargetInput" placeholder="Importo obiettivo €">
+        <button onclick="saveGoal()">Salva</button>
+      </div>
+    </div>
+    <div id="goalDisplay"></div>
+  </div>
+
+  <!-- STORICO -->
+  <div class="card">
+    <div class="section-title">Storico settimanale</div>
+    <div id="chartArea" class="chart-wrap"></div>
+    <div id="weekHistList" style="margin-top:10px;"></div>
+  </div>
+
+</div>
+
+<script>
+const STORAGE_KEY = 'spese-settimanali-v1';
+
+let state = {
+  weeklyBudgetBase: 70,
+  goal: { name: '', target: 0, saved: 0, contributions: [] },
+  weeks: {}
+};
+
+// ---------- date helpers ----------
+function pad(n){ return String(n).padStart(2,'0'); }
+function toISO(d){ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+
+function getMonday(date){
+  const d = new Date(date);
+  const day = d.getDay(); // 0=Dom,1=Lun,...
+  const diff = (day === 0 ? -6 : 1 - day);
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function addDays(d, n){ const r = new Date(d); r.setDate(r.getDate()+n); return r; }
+
+function currentWeekKey(){
+  return toISO(getMonday(new Date()));
+}
+function weekLabel(mondayISO){
+  const mon = new Date(mondayISO + 'T00:00:00');
+  const sun = addDays(mon, 6);
+  const fmt1 = mon.toLocaleDateString('it-IT', {day:'2-digit', month:'short'});
+  const fmt2 = sun.toLocaleDateString('it-IT', {day:'2-digit', month:'short'});
+  return `${fmt1} – ${fmt2}`;
+}
+
+function fmt(n){
+  const sign = n < 0 ? '-' : '';
+  return sign + '€' + Math.abs(n).toFixed(2).replace(/\.00$/,'');
+}
+
+// ---------- storage ----------
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const loaded = JSON.parse(raw);
+      state = Object.assign(state, loaded);
+      if(!state.goal.contributions) state.goal.contributions = [];
+    }
+  }catch(e){ console.log('Nessun dato salvato, parto da zero.'); }
+  ensureWeek(currentWeekKey());
+  // migrazione: vecchie spese senza giorno associato -> le assegno al lunedì della loro settimana
+  Object.keys(state.weeks).forEach(wk => {
+    state.weeks[wk].entries.forEach(e => {
+      if(!e.date) e.date = wk;
+    });
+  });
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  renderAll();
+}
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.error('Errore salvataggio', e); }
+}
+
+function ensureWeek(key){
+  if(!state.weeks[key]){
+    state.weeks[key] = { entries: [], note: '', credit: 0, resolved: false, allocation: null };
+  }
+}
+
+function weekSpent(key){
+  const w = state.weeks[key];
+  if(!w) return 0;
+  return w.entries.reduce((s,e)=>s+e.amount, 0);
+}
+function weekBudget(key){
+  const w = state.weeks[key];
+  const credit = w ? (w.credit || 0) : 0;
+  return state.weeklyBudgetBase + credit;
+}
+function weekMargin(key){
+  return weekBudget(key) - weekSpent(key);
+}
+
+// ---------- budget base ----------
+function toggleBudgetEdit(){
+  const row = document.getElementById('budgetEditRow');
+  const isOpen = row.style.display === 'block';
+  row.style.display = isOpen ? 'none' : 'block';
+  document.getElementById('budgetInput').value = state.weeklyBudgetBase;
+}
+function saveBudget(){
+  const v = parseFloat(document.getElementById('budgetInput').value);
+  if(!v || v <= 0) return;
+  state.weeklyBudgetBase = v;
+  document.getElementById('budgetEditRow').style.display = 'none';
+  save(); renderAll();
+}
+
+// ---------- current week expenses ----------
+let expandedDay = null;
+function toggleDay(date){
+  expandedDay = (expandedDay === date) ? null : date;
+  renderAll();
+}
+function addExpenseDay(date){
+  const input = document.getElementById('curAddInput-' + date);
+  const amount = parseFloat(input.value);
+  if(!amount || amount <= 0) return;
+  const key = currentWeekKey();
+  ensureWeek(key);
+  state.weeks[key].entries.push({id: Date.now()+Math.random(), amount, date});
+  input.value = '';
+  save(); renderAll();
+  const margineEl = document.getElementById('curMargine');
+  margineEl.classList.remove('pop');
+  void margineEl.offsetWidth;
+  margineEl.classList.add('pop');
+  expandedDay = date;
+  renderAll();
+  const newInput = document.getElementById('curAddInput-' + date);
+  if(newInput) newInput.focus();
+}
+function removeExpenseDay(id){
+  const key = currentWeekKey();
+  state.weeks[key].entries = state.weeks[key].entries.filter(e => e.id !== id);
+  save(); renderAll();
+}
+function saveNote(val){
+  const key = currentWeekKey();
+  ensureWeek(key);
+  state.weeks[key].note = val;
+  save();
+}
+
+// ---------- goal ----------
+function toggleGoalEdit(){
+  const row = document.getElementById('goalEditRow');
+  const isOpen = row.style.display === 'block';
+  row.style.display = isOpen ? 'none' : 'block';
+  document.getElementById('goalNameInput').value = state.goal.name || '';
+  document.getElementById('goalTargetInput').value = state.goal.target || '';
+  document.getElementById('goalEmojiInput').value = state.goal.emoji || '🎯';
+}
+function saveGoal(){
+  const name = document.getElementById('goalNameInput').value.trim();
+  const target = parseFloat(document.getElementById('goalTargetInput').value);
+  const emoji = document.getElementById('goalEmojiInput').value.trim() || '🎯';
+  state.goal.name = name;
+  state.goal.target = target || 0;
+  state.goal.emoji = emoji;
+  document.getElementById('goalEditRow').style.display = 'none';
+  save(); renderAll();
+}
+
+// ---------- allocazione margine settimane chiuse ----------
+function getPendingWeeks(){
+  const curKey = currentWeekKey();
+  return Object.keys(state.weeks)
+    .filter(k => k < curKey && !state.weeks[k].resolved)
+    .sort();
+}
+function resolveWeekNoAction(key){
+  state.weeks[key].resolved = true;
+  state.weeks[key].allocation = {toGoal:0, toCredit:0};
+  save(); renderAll();
+}
+function confirmAllocation(key){
+  const margin = weekMargin(key);
+  const toGoalInput = document.getElementById('allocGoal-' + key);
+  const toCreditInput = document.getElementById('allocCredit-' + key);
+  let toGoal = parseFloat(toGoalInput.value) || 0;
+  let toCredit = parseFloat(toCreditInput.value) || 0;
+  if(toGoal < 0) toGoal = 0;
+  if(toCredit < 0) toCredit = 0;
+  const total = toGoal + toCredit;
+  if(total > margin + 0.001){
+    alert('La somma supera il margine disponibile di ' + fmt(margin));
+    return;
+  }
+  state.weeks[key].resolved = true;
+  state.weeks[key].allocation = {toGoal, toCredit};
+  if(toGoal > 0){
+    state.goal.saved = (state.goal.saved || 0) + toGoal;
+    state.goal.contributions.push({week: key, amount: toGoal});
+  }
+  if(toCredit > 0){
+    const nextKey = toISO(addDays(new Date(key + 'T00:00:00'), 7));
+    ensureWeek(nextKey);
+    state.weeks[nextKey].credit = (state.weeks[nextKey].credit || 0) + toCredit;
+  }
+  save(); renderAll();
+}
+
+// ---------- confetti ----------
+function launchConfetti(){
+  const colors = ['#8b7cff','#5ee6a8','#e6c85e','#ff6b6b','#ffb454'];
+  for(let i=0; i<40; i++){
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.left = Math.random()*100 + 'vw';
+    el.style.background = colors[Math.floor(Math.random()*colors.length)];
+    el.style.animationDuration = (2 + Math.random()*1.5) + 's';
+    el.style.animationDelay = (Math.random()*0.4) + 's';
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+  }
+}
+
+// ---------- mini calendario settimanale ----------
+function renderWeekDots(curKey){
+  const mon = new Date(curKey + 'T00:00:00');
+  const todayD = new Date();
+  todayD.setHours(0,0,0,0);
+  const labels = ['L','M','M','G','V','S','D'];
+  const dotsEl = document.getElementById('weekDots');
+  dotsEl.innerHTML = labels.map((lbl, i) => {
+    const d = addDays(mon, i);
+    const isToday = d.getTime() === todayD.getTime();
+    const isPast = d.getTime() < todayD.getTime();
+    return `
+      <div class="week-dot-col">
+        <span class="week-dot-label ${isToday?'today':''}">${lbl}</span>
+        <span class="week-dot ${isPast?'past':''} ${isToday?'today':''}"></span>
+      </div>`;
+  }).join('');
+}
+function computeStreak(){
+  const curKey = currentWeekKey();
+  const closedKeys = Object.keys(state.weeks).filter(k => k < curKey).sort().reverse();
+  let streak = 0;
+  for(const k of closedKeys){
+    if(weekSpent(k) === 0 && state.weeks[k].entries.length === 0) continue; // settimana senza dati, salto
+    if(weekMargin(k) >= 0) streak++;
+    else break;
+  }
+  return streak;
+}
+
+// ---------- render ----------
+function renderAll(){
+  const curKey = currentWeekKey();
+  ensureWeek(curKey);
+
+  document.getElementById('budgetDisplay').textContent = fmt(state.weeklyBudgetBase) + '/sett.';
+
+  // allocazioni pendenti
+  const pending = getPendingWeeks();
+  const allocContainer = document.getElementById('allocContainer');
+  allocContainer.innerHTML = pending.map(k => {
+    const margin = weekMargin(k);
+    if(margin <= 0){
+      resolveWeekNoAction(k); // niente da allocare, auto-risolvo
+      return '';
+    }
+    return `
+      <div class="card alloc-card">
+        <div class="section-title" style="color:var(--gold);">Settimana ${weekLabel(k)} chiusa</div>
+        <div class="row">
+          <span class="label">Margine da assegnare</span>
+          <span class="value pos">${fmt(margin)}</span>
+        </div>
+        <div class="alloc-split">
+          <div class="alloc-split-col">
+            <label>Verso obiettivo</label>
+            <input type="number" id="allocGoal-${k}" placeholder="€0" inputmode="decimal">
+          </div>
+          <div class="alloc-split-col">
+            <label>Credito sett. prossima</label>
+            <input type="number" id="allocCredit-${k}" placeholder="€0" inputmode="decimal">
+          </div>
+        </div>
+        <button style="width:100%" onclick="confirmAllocation('${k}')">Conferma assegnazione</button>
+      </div>`;
+  }).join('');
+
+  // settimana corrente
+  document.getElementById('currentWeekLabel').textContent = 'Settimana corrente (' + weekLabel(curKey) + ')';
+  renderWeekDots(curKey);
+  const budget = weekBudget(curKey);
+  const spent = weekSpent(curKey);
+  const margin = budget - spent;
+  document.getElementById('curBudget').textContent = fmt(budget) + (state.weeks[curKey].credit ? ` (base ${fmt(state.weeklyBudgetBase)} + credito ${fmt(state.weeks[curKey].credit)})` : '');
+  document.getElementById('curSpeso').textContent = fmt(spent);
+  document.getElementById('curMargine').textContent = fmt(margin);
+  document.getElementById('curMargine').className = 'value big ' + (margin >= 0 ? 'pos' : 'neg');
+  const pct = Math.min(100, (spent/budget)*100);
+  const bar = document.getElementById('curBar');
+  bar.style.width = pct + '%';
+  bar.classList.remove('warn','over');
+  if(spent > budget) bar.classList.add('over');
+  else if(pct >= 70) bar.classList.add('warn');
+
+  const dayList = document.getElementById('curDayList');
+  const todayISOStr = toISO(new Date());
+  const allEntries = state.weeks[curKey].entries;
+  dayList.innerHTML = Array.from({length:7}).map((_, i) => {
+    const d = addDays(new Date(curKey + 'T00:00:00'), i);
+    const dKey = toISO(d);
+    const dayEntries = allEntries.filter(e => e.date === dKey);
+    const daySum = dayEntries.reduce((s,e)=>s+e.amount,0);
+    const hasEntries = dayEntries.length > 0;
+    const isToday = dKey === todayISOStr;
+    const isExpanded = expandedDay === dKey;
+    const lbl = d.toLocaleDateString('it-IT', {weekday:'short', day:'2-digit', month:'short'});
+    const entriesHtml = dayEntries.map(e => `
+      <div class="expense-row">
+        <span>${fmt(e.amount)}</span>
+        <button class="danger-outline" onclick="removeExpenseDay(${e.id})">✕</button>
+      </div>`).join('');
+    return `
+      <div class="day-item ${isToday?'today-row':''}">
+        <div class="day-row" onclick="toggleDay('${dKey}')">
+          <span class="day-date">${lbl}${isToday?' 👈':''}</span>
+          <span class="day-total">${hasEntries ? fmt(daySum) : '—'}</span>
+          <span class="day-chevron">${isExpanded ? '▲' : '▼'}</span>
+        </div>
+        ${isExpanded ? `
+        <div class="day-expand">
+          ${entriesHtml || '<div class="empty" style="padding:4px 0;">Nessuna spesa</div>'}
+          <div class="add-expense-row">
+            <input id="curAddInput-${dKey}" type="number" inputmode="decimal" placeholder="€ nuova spesa"
+              onkeydown="if(event.key==='Enter'){addExpenseDay('${dKey}')}">
+            <button onclick="addExpenseDay('${dKey}')">+</button>
+          </div>
+        </div>` : ''}
+      </div>`;
+  }).join('');
+  document.getElementById('curNote').value = state.weeks[curKey].note || '';
+
+  // streak
+  const streak = computeStreak();
+  document.getElementById('streakNum').textContent = streak;
+  document.getElementById('streakFire').style.opacity = streak > 0 ? '1' : '0.3';
+
+  // goal
+  const g = state.goal;
+  const goalDisplay = document.getElementById('goalDisplay');
+  if(!g.target || g.target <= 0){
+    goalDisplay.innerHTML = '<div class="empty">Imposta un obiettivo per iniziare a monitorarlo</div>';
+  } else {
+    const pctGoal = Math.min(100, ((g.saved||0)/g.target)*100);
+    const reached = (g.saved||0) >= g.target;
+    let projectionText = 'Nessun risparmio ancora verso questo obiettivo';
+    if(!reached && g.contributions.length > 0){
+      const avg = g.contributions.reduce((s,c)=>s+c.amount,0) / g.contributions.length;
+      if(avg > 0){
+        const remaining = g.target - (g.saved||0);
+        const weeksLeft = Math.ceil(remaining / avg);
+        projectionText = `Al ritmo attuale (~${fmt(avg)}/sett.), obiettivo tra circa ${weeksLeft} settimane`;
+      }
+    } else if(reached){
+      projectionText = '🎉 Obiettivo raggiunto!';
+    }
+    const ringDeg = (pctGoal/100) * 360;
+    goalDisplay.innerHTML = `
+      <div class="goal-top">
+        <div class="ring-wrap">
+          <div class="ring-bg" style="background:conic-gradient(var(--gold) ${ringDeg}deg, #26223a ${ringDeg}deg);"></div>
+          <div class="ring-inner-hole"></div>
+          <div class="ring-center">${Math.round(pctGoal)}%</div>
+        </div>
+        <div>
+          <div class="goal-name-row"><span class="goal-emoji">${g.emoji || '🎯'}</span>${g.name || 'Obiettivo'}</div>
+          <div class="value" style="margin-top:4px;">${fmt(g.saved||0)} <span class="muted-small">/ ${fmt(g.target)}</span></div>
+        </div>
+      </div>
+      <div class="muted-small" style="margin-top:6px;">${projectionText}</div>
+    `;
+    if(reached && !state.goal._confettiShown){
+      launchConfetti();
+      state.goal._confettiShown = true;
+      save();
+    }
+    if(!reached){
+      state.goal._confettiShown = false;
+    }
+  }
+
+  // storico
+  renderHistory(curKey);
+}
+
+function renderHistory(curKey){
+  const closedKeys = Object.keys(state.weeks).filter(k => k < curKey).sort();
+  const last8 = closedKeys.slice(-8);
+
+  const chartArea = document.getElementById('chartArea');
+  if(last8.length === 0){
+    chartArea.innerHTML = '<div class="empty">Ancora nessuno storico</div>';
+  } else {
+    const maxVal = Math.max(...last8.map(k => Math.max(weekSpent(k), weekBudget(k))), 10);
+    chartArea.innerHTML = last8.map(k => {
+      const spent = weekSpent(k);
+      const h = Math.max(2, (spent/maxVal)*100);
+      const over = spent > weekBudget(k);
+      const mon = new Date(k + 'T00:00:00');
+      const lbl = mon.toLocaleDateString('it-IT', {day:'2-digit', month:'2-digit'});
+      return `
+        <div class="chart-col">
+          <div class="chart-bar ${over?'over':''}" style="height:${h}%;" title="${fmt(spent)}"></div>
+          <div class="chart-label">${lbl}</div>
+        </div>`;
+    }).join('');
+  }
+
+  const histList = document.getElementById('weekHistList');
+  if(closedKeys.length === 0){
+    histList.innerHTML = '';
+  } else {
+    histList.innerHTML = closedKeys.slice().reverse().slice(0,10).map(k => {
+      const spent = weekSpent(k);
+      const budget = weekBudget(k);
+      const margin = budget - spent;
+      const note = state.weeks[k].note;
+      return `
+        <div class="week-hist-item">
+          <span>${weekLabel(k)}${note ? ' <span class="muted-small">— ' + note.slice(0,28) + (note.length>28?'…':'') + '</span>' : ''}</span>
+          <span class="${margin>=0?'pos':'neg'}" style="font-weight:600;">${fmt(spent)} / ${fmt(budget)}</span>
+        </div>`;
+    }).join('');
+  }
+}
+
+load();
+</script>
+</body>
+</html>
