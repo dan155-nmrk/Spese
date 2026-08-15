@@ -6,9 +6,9 @@
 <title>Spese Settimanali</title>
 <style>
   :root{
-    --bg:#0e0c17; --card:#1a1728; --border:#2c2745;
-    --text:#eaeaf2; --muted:#8e8aa3;
-    --accent:#8b7cff; --accent2:#5ee6a8; --danger:#ff6b6b; --warn:#ffb454; --gold:#e6c85e;
+    --bg:#0b0f1a; --card:#111827; --border:#1f2937;
+    --text:#eaeef5; --muted:#8b95a8;
+    --accent:#4dd8e6; --accent2:#4dd8e6; --danger:#ff6b6b; --warn:#ffb454; --gold:#e6c85e;
   }
   *{box-sizing:border-box;}
   body{
@@ -23,7 +23,7 @@
   }
   .card.glow{
     border-color:var(--accent);
-    box-shadow:0 0 0 1px rgba(139,124,255,.25), 0 8px 24px -8px rgba(139,124,255,.35);
+    box-shadow:0 0 0 1px rgba(77,216,230,.25), 0 8px 24px -8px rgba(77,216,230,.35);
   }
   .row{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
   .label{color:var(--muted); font-size:13px;}
@@ -94,7 +94,7 @@
   /* lista giorni espandibile (come app vacanza) */
   .day-item{border-bottom:1px solid var(--border); font-size:13.5px;}
   .day-item:last-child{border-bottom:none;}
-  .day-item.today-row{background:rgba(139,124,255,.08); border-radius:8px;}
+  .day-item.today-row{background:rgba(77,216,230,.08); border-radius:8px;}
   .day-row{display:flex; justify-content:space-between; align-items:center; padding:10px 6px; cursor:pointer;}
   .day-chevron{color:var(--muted); font-size:11px; width:16px; text-align:right;}
   .day-date{color:var(--muted); width:80px; flex-shrink:0; font-size:13px;}
@@ -107,7 +107,7 @@
     transition:background .2s;
   }
   .week-dot.past{background:var(--muted);}
-  .week-dot.today{background:var(--accent); box-shadow:0 0 0 3px rgba(139,124,255,.25); width:11px; height:11px;}
+  .week-dot.today{background:var(--accent); box-shadow:0 0 0 3px rgba(77,216,230,.25); width:11px; height:11px;}
   .week-dot-label{font-size:9.5px; color:var(--muted); text-transform:uppercase;}
   .week-dot-label.today{color:var(--accent); font-weight:700;}
 
@@ -187,11 +187,6 @@
     </div>
 
     <div id="curDayList" style="margin-top:12px;"></div>
-
-    <div style="margin-top:12px;">
-      <label class="muted-small" style="display:block; margin-bottom:4px;">Nota della settimana</label>
-      <textarea id="curNote" placeholder="es. weekend compleanno, trasferta lavoro..." onchange="saveNote(this.value)"></textarea>
-    </div>
   </div>
 
   <!-- STREAK -->
@@ -361,13 +356,6 @@ function removeExpenseDay(id){
   state.weeks[key].entries = state.weeks[key].entries.filter(e => e.id !== id);
   save(); renderAll();
 }
-function saveNote(val){
-  const key = currentWeekKey();
-  ensureWeek(key);
-  state.weeks[key].note = val;
-  save();
-}
-
 // ---------- goal ----------
 function toggleGoalEdit(){
   const row = document.getElementById('goalEditRow');
@@ -429,7 +417,7 @@ function confirmAllocation(key){
 
 // ---------- confetti ----------
 function launchConfetti(){
-  const colors = ['#8b7cff','#5ee6a8','#e6c85e','#ff6b6b','#ffb454'];
+  const colors = ['#4dd8e6','#4dd8e6','#e6c85e','#ff6b6b','#ffb454'];
   for(let i=0; i<40; i++){
     const el = document.createElement('div');
     el.className = 'confetti-piece';
@@ -561,7 +549,6 @@ function renderAll(){
         </div>` : ''}
       </div>`;
   }).join('');
-  document.getElementById('curNote').value = state.weeks[curKey].note || '';
 
   // streak
   const streak = computeStreak();
